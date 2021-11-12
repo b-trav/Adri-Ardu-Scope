@@ -961,8 +961,18 @@ def selectFromDict(options, name):
     
     return selected
 
-  
-if __name__ == "__main__":
+def run_scope():
+    global verbosegbl
+    global COMValid
+    global heartbeatio
+    global fig
+    global ax
+    global frontpanel
+    global ac_btn
+    global abs_btn
+    global line1
+    global line2
+
     ValidSerial=True
     verbosegbl=False
     COMValid=True
@@ -979,6 +989,7 @@ if __name__ == "__main__":
     
     Portslist= findSerialPorts.serial_ports()
     #print('USBs=',Portslist)
+    
     USBdev=[s for s in Portslist if ('COM' in s) or ('ACM' in s)] 
     #print('USBs=',USBdev,len(USBdev))
     options = {}
@@ -989,143 +1000,146 @@ if __name__ == "__main__":
         closebtn=Button(axclosebtn,label='CLOSE',color='r',hovercolor='.5')
         callingfunction=lambda localevent_x: (gracefulexit())
         closebtn.on_clicked(quit)
-        input()
-
- 
-    else:
-        if(len(USBdev)==1):
-            option=USBdev[0]
-        else:
-            option = selectFromDict(USBdev, 'USB Port')
-        # if here then a valid port was found
-        heartbeat_Connect=option
-        heartbeatio = serial.Serial(heartbeat_Connect,BaudRate,timeout=1) #115200 19200
-        flushheartbeatserial()
-        time.sleep(1) # wait 
-
-        tlast=[];
-        ylast=[];
-        fig, ax = plt.subplots(figsize=(10,4))
-        fig.canvas.set_window_title("Adri/ArduScope (Version: "+str(__version__)+") - by Dr. Adrian Keating at The University of Western Australia")
-        ax.grid(True)
-        ax.grid(color='k', ls = ':', lw = 1)
-        ax.set_facecolor('xkcd:green') #
-        scrnY=0.95
-        scrnX=0.65
-        Y0=0.15
-        X0=0.05
-        plt.subplots_adjust(bottom=Y0,top=scrnY,left=X0,right=scrnX)
-        plt.title('RealTime Adri/Ardu-Scope: <ESC> to exit')
-        plt.xlabel('Time (ms)')
-        plt.ylabel('Voltage (V)')
-        plt.ylim( ymin = 0)
-        btnax=plt.axes([.79, 0, .3,.5])
-        bttn=Button(btnax,label='',image=UWA_LOGO )
-        bttn.on_clicked(lambda event:frontpanel.about())
-        btnax2=plt.axes([.89, .5, .1,.1])
-        bttn2=Button(btnax2,label='About')
-        bttn2.on_clicked(lambda event:frontpanel.about())
-        btnax.set_frame_on(False)
+        input() 
+        return
     
-        line1, = ax.plot([0],[0])#,'w-')                       
-        line2, = ax.plot([0],[0])#, 'b-') # Returns a tuple of line objects, thus the comma 
-        exitflag=False
-        fig.canvas.mpl_connect('key_press_event', handle)
-        fig.canvas.mpl_connect('close_event', beforeclose)
-        heartbeatio.write('d0;c1;f3;R1;'.encode())  # send as bytes
-        time.sleep(.1)
+    if(len(USBdev)==1):
+        option=USBdev[0]
+    else:
+        option = selectFromDict(USBdev, 'USB Port')
+    # if here then a valid port was found
+    heartbeat_Connect=option
+    heartbeatio = serial.Serial(heartbeat_Connect,BaudRate,timeout=1) #115200 19200
+    flushheartbeatserial()
+    time.sleep(1) # wait 
 
-        i=0              
-        fn=lambda xx: (print("Click ING .....!"),print('state=',xx))
-        frontpanel.X0=.6
-        frontpanel.Y0=.9
-        Amp_btn=scope_button()
-        Amp_btn.X0=.67
-        Amp_btn.Y0=.8
-        kk=30
-        Avalues=[frontpanel.Amp*(1-(i/kk)) for i in range(kk)]
-        Amp_btn.add_dblbutton(frontpanel.SetAmp,'Amplitude (V)',direction='vertical',values=Avalues)
-        Offset_btn=scope_button()
-        Offset_btn.X0=Amp_btn.X0
-        Offset_btn.Y0=Amp_btn.Y0
-        Ovalues=[frontpanel.Offset+frontpanel.Amp*(i-kk//2)/kk for i in range(kk)]
-        Offset_btn.add_dblbutton(frontpanel.SetOffset,'Offset (V)',direction='vertical',values=Ovalues,initalindex=kk//2)      
+    tlast=[];
+    ylast=[];
+    fig, ax = plt.subplots(figsize=(10,4))
+    fig.canvas.manager.set_window_title("Adri/ArduScope (Version: "+str(__version__)+") - by Dr. Adrian Keating at The University of Western Australia")
+    ax.grid(True)
+    ax.grid(color='k', ls = ':', lw = 1)
+    ax.set_facecolor('xkcd:green') #
+    scrnY=0.95
+    scrnX=0.65
+    Y0=0.15
+    X0=0.05
+    plt.subplots_adjust(bottom=Y0,top=scrnY,left=X0,right=scrnX)
+    plt.title('RealTime Adri/Ardu-Scope: <ESC> to exit')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Voltage (V)')
+    plt.ylim( ymin = 0)
+    btnax=plt.axes([.79, 0, .3,.5])
+    bttn=Button(btnax,label='',image=UWA_LOGO )
+    bttn.on_clicked(lambda event:frontpanel.about())
+    btnax2=plt.axes([.89, .5, .1,.1])
+    bttn2=Button(btnax2,label='About')
+    bttn2.on_clicked(lambda event:frontpanel.about())
+    btnax.set_frame_on(False)
 
-        
-        panel_Btns=scope_button()
-        ac_btn=scope_button()
-        #print(frontpanel.__dict__)
-        ac_btn.X0=Offset_btn.X0
-        ac_btn.Y0=Offset_btn.Y0
-        ac_btn.addbutton(cmd=frontpanel.ac_on,label='AC')
-        abs_btn=scope_button()
-        abs_btn.X0=ac_btn.X0
-        abs_btn.Y0=ac_btn.Y0
-        abs_btn.addbutton(cmd=frontpanel.abs_on,label='ABS()')
-        axcolor = 'y'
-        mem_store = plt.axes([abs_btn.X0-0.005, abs_btn.Y0-0.005, .085, 0.05], facecolor=axcolor)
-        mem_store_Btn = Button(mem_store,label='STORE CH1', color='white', hovercolor='grey')
-        mem_store_Btn.on_clicked(frontpanel.mem_store)
+    line1, = ax.plot([0],[0])#,'w-')                       
+    line2, = ax.plot([0],[0])#, 'b-') # Returns a tuple of line objects, thus the comma 
+    exitflag=False
+    fig.canvas.mpl_connect('key_press_event', handle)
+    fig.canvas.mpl_connect('close_event', beforeclose)
+    heartbeatio.write('d0;c1;f3;R1;'.encode())  # send as bytes
+    time.sleep(.1)
 
-        save_on = plt.axes([abs_btn.X0-0.005, abs_btn.Y0-0.075, .085, 0.05], facecolor=axcolor)
-        save_onBtn = Button(save_on,label='SAVE', color='white', hovercolor='grey')
-        save_onBtn.on_clicked(frontpanel.save_on)
+    i=0              
+    fn=lambda xx: (print("Click ING .....!"),print('state=',xx))
+    frontpanel.X0=.6
+    frontpanel.Y0=.9
+    Amp_btn=scope_button()
+    Amp_btn.X0=.67
+    Amp_btn.Y0=.8
+    kk=30
+    Avalues=[frontpanel.Amp*(1-(i/kk)) for i in range(kk)]
+    Amp_btn.add_dblbutton(frontpanel.SetAmp,'Amplitude (V)',direction='vertical',values=Avalues)
+    Offset_btn=scope_button()
+    Offset_btn.X0=Amp_btn.X0
+    Offset_btn.Y0=Amp_btn.Y0
+    Ovalues=[frontpanel.Offset+frontpanel.Amp*(i-kk//2)/kk for i in range(kk)]
+    Offset_btn.add_dblbutton(frontpanel.SetOffset,'Offset (V)',direction='vertical',values=Ovalues,initalindex=kk//2)      
 
-        
-        H=len(Functions)*scrnY/12
-        W=.15
-        Xc=scrnX+0+.07
-        Yc=scrnY-H*1
-        Fnax = plt.axes([Xc, Yc, W, H], facecolor=axcolor,frame_on=False)
-        Fnradio = RadioButtons(Fnax, Functions.keys())
-        Fnradio.on_clicked(frontpanel.SetFunction) 
-        #H=H*3/4
-        ax_separator= plt.axes([Xc, Yc, W, H/20], facecolor=axcolor,frame_on=False)
-        ax_separator.set_frame_on(False)
-        Button(ax_separator,label='-----------------------')
-        W=.1
-        H=len(ChannelOptions)*scrnY/12
-        Yc=scrnY-H*2-H/5
-        Xc=Xc+W/10
-        Chax = plt.axes([Xc, Yc, W, H], facecolor=axcolor,frame_on=False)
-        Chradio = RadioButtons(Chax, ChannelOptions.keys())
-        Chradio.on_clicked(frontpanel.SetChannel)
-        #Chax.set_frame_on(False)
-        ax_separator= plt.axes([Xc, Yc, W, H/20], facecolor=axcolor,frame_on=False)
-        ax_separator.set_frame_on(False)
-        Button(ax_separator,label='----------------')
-        
-        Time_btn=scope_button()
-        Time_btn.X0=Xc+.05
-        Time_btn.Y0=Yc-H/2
-        Tvalues=frontpanel.ValidTimebaseValue #[frontpanel.TimebaseMultiples*(i+1) for i in range(10)]
-        Time_btn.add_dblbutton(frontpanel.Timebase,'Timebase (ms)',values=Tvalues,initalindex=3)
-        Delay_btn=scope_button()
-        Delay_btn.X0=Time_btn.X0
-        Delay_btn.Y0=Time_btn.Y0
-        #Delay_btn.add_dblbutton(fn,'Delay (ms)')
-        Dvalues=[frontpanel.DelayMultiples*(i)*100 for i in range(50)]
-        Delay_btn.add_dblbutton(frontpanel.Delay,label='Delay (micros)',values=Dvalues)
-  
-        btnax=plt.axes([.79, 0, .3,.5])
-        bttn=Button(btnax,label='',image=UWA_LOGO )
-        bttn.on_clicked(lambda event:frontpanel.about())
-        btnax2=plt.axes([.89, .5, .1,.1])
-        bttn2=Button(btnax2,label='About')
-        bttn2.on_clicked(lambda event:frontpanel.about())
-        btnax.set_frame_on(False)
-        while(exitflag==False):
-            if(frontpanel.shwoabout==False):
-                updateplot(i)
-                heartbeatio.write('R1;'.encode())  # send as bytes
-                fig.canvas.draw_idle()
-            time.sleep(.01)
-            i+=1
-        gracefulexit()     
-        flushheartbeatserial()  # remove any unread data
-        heartbeatstop()
-        heartbeatio.close()
- 
-        
+
+    panel_Btns=scope_button()
+    ac_btn=scope_button()
+    #print(frontpanel.__dict__)
+    ac_btn.X0=Offset_btn.X0
+    ac_btn.Y0=Offset_btn.Y0
+    ac_btn.addbutton(cmd=frontpanel.ac_on,label='AC')
+    abs_btn=scope_button()
+    abs_btn.X0=ac_btn.X0
+    abs_btn.Y0=ac_btn.Y0
+    abs_btn.addbutton(cmd=frontpanel.abs_on,label='ABS()')
+    axcolor = 'y'
+    mem_store = plt.axes([abs_btn.X0-0.005, abs_btn.Y0-0.005, .085, 0.05], facecolor=axcolor)
+    mem_store_Btn = Button(mem_store,label='STORE CH1', color='white', hovercolor='grey')
+    mem_store_Btn.on_clicked(frontpanel.mem_store)
+
+    save_on = plt.axes([abs_btn.X0-0.005, abs_btn.Y0-0.075, .085, 0.05], facecolor=axcolor)
+    save_onBtn = Button(save_on,label='SAVE', color='white', hovercolor='grey')
+    save_onBtn.on_clicked(frontpanel.save_on)
+
+
+    H=len(Functions)*scrnY/12
+    W=.15
+    Xc=scrnX+0+.07
+    Yc=scrnY-H*1
+    Fnax = plt.axes([Xc, Yc, W, H], facecolor=axcolor,frame_on=False)
+    Fnradio = RadioButtons(Fnax, Functions.keys())
+    Fnradio.on_clicked(frontpanel.SetFunction) 
+    #H=H*3/4
+    ax_separator= plt.axes([Xc, Yc, W, H/20], facecolor=axcolor,frame_on=False)
+    ax_separator.set_frame_on(False)
+    Button(ax_separator,label='-----------------------')
+    W=.1
+    H=len(ChannelOptions)*scrnY/12
+    Yc=scrnY-H*2-H/5
+    Xc=Xc+W/10
+    Chax = plt.axes([Xc, Yc, W, H], facecolor=axcolor,frame_on=False)
+    Chradio = RadioButtons(Chax, ChannelOptions.keys())
+    Chradio.on_clicked(frontpanel.SetChannel)
+    #Chax.set_frame_on(False)
+    ax_separator= plt.axes([Xc, Yc, W, H/20], facecolor=axcolor,frame_on=False)
+    ax_separator.set_frame_on(False)
+    Button(ax_separator,label='----------------')
+
+    Time_btn=scope_button()
+    Time_btn.X0=Xc+.05
+    Time_btn.Y0=Yc-H/2
+    Tvalues=frontpanel.ValidTimebaseValue #[frontpanel.TimebaseMultiples*(i+1) for i in range(10)]
+    Time_btn.add_dblbutton(frontpanel.Timebase,'Timebase (ms)',values=Tvalues,initalindex=3)
+    Delay_btn=scope_button()
+    Delay_btn.X0=Time_btn.X0
+    Delay_btn.Y0=Time_btn.Y0
+    #Delay_btn.add_dblbutton(fn,'Delay (ms)')
+    Dvalues=[frontpanel.DelayMultiples*(i)*100 for i in range(50)]
+    Delay_btn.add_dblbutton(frontpanel.Delay,label='Delay (micros)',values=Dvalues)
+
+    btnax=plt.axes([.79, 0, .3,.5])
+    bttn=Button(btnax,label='',image=UWA_LOGO )
+    bttn.on_clicked(lambda event:frontpanel.about())
+    btnax2=plt.axes([.89, .5, .1,.1])
+    bttn2=Button(btnax2,label='About')
+    bttn2.on_clicked(lambda event:frontpanel.about())
+    btnax.set_frame_on(False)
+    while(exitflag==False):
+        if(frontpanel.shwoabout==False):
+            updateplot(i)
+            heartbeatio.write('R1;'.encode())  # send as bytes
+            fig.canvas.draw_idle()
+        time.sleep(.01)
+        i+=1
+    gracefulexit()     
+    flushheartbeatserial()  # remove any unread data
+    heartbeatstop()
+    heartbeatio.close()
+
+
+if __name__ == "__main__":
+    run_scope()
+    
+    
 
    
